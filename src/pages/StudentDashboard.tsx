@@ -4,13 +4,11 @@ import {
   Typography, 
   Button, 
   Paper, 
-  Grid, 
   Tab, 
   Tabs, 
   CircularProgress,
   Divider,
   Chip,
-  LinearProgress,
   TextField,
   Alert,
   Dialog,
@@ -32,11 +30,9 @@ import {
   NotificationsActive as NotificationsIcon, 
   AccountCircle as AccountIcon, 
   CheckCircle as CheckCircleIcon, 
-  Receipt as ReceiptIcon,
   Warning as WarningIcon,
   Schedule as ScheduleIcon,
   Phone as PhoneIcon,
-  Map as MapIcon,
   History as HistoryIcon,
   CreditCard as CreditCardIcon,
   Download as DownloadIcon,
@@ -346,13 +342,7 @@ const RouteDetails: React.FC<{ student: any; onRegisterClick: () => void; onPick
     const [updating, setUpdating] = useState(false);
     const [updateMessage, setUpdateMessage] = useState('');
 
-    useEffect(() => {
-        if (student.currentRoute) {
-            fetchRouteInfo();
-        }
-    }, [student.currentRoute]);
-
-    const fetchRouteInfo = async () => {
+    const fetchRouteInfo = React.useCallback(async () => {
         try {
             const response = await fetch(
                 `http://localhost:5000/api/students/route-info?routeName=${encodeURIComponent(student.currentRoute)}`
@@ -374,7 +364,13 @@ const RouteDetails: React.FC<{ student: any; onRegisterClick: () => void; onPick
             console.error('Error fetching route info:', error);
             setLoading(false);
         }
-    };
+    }, [student.currentRoute, student.pickupPoint]);
+
+    useEffect(() => {
+        if (student.currentRoute) {
+            fetchRouteInfo();
+        }
+    }, [student.currentRoute, fetchRouteInfo]);
 
     const handlePickupPointChange = async (pickupPoint: any) => {
         setSelectedPickupPoint(pickupPoint);
@@ -1030,63 +1026,64 @@ const FeesAndPayments: React.FC<{ student: any; onPaymentSuccess: () => void }> 
   const [showPaymentHistory, setShowPaymentHistory] = useState(false);
   const [paymentHistory, setPaymentHistory] = useState<any[]>([]);
 
-  const handlePayment = async () => {
-    const amount = parseFloat(paymentAmount);
-    
-    if (!amount || amount <= 0) {
-      setPaymentMessage('Please enter a valid amount');
-      return;
-    }
-
-    const remainingBalance = student.feeDue - student.amountPaid;
-    if (amount > remainingBalance) {
-      setPaymentMessage(`Amount exceeds balance due (₹${remainingBalance.toLocaleString('en-IN')})`);
-      return;
-    }
-
-    setIsPaying(true);
-    setPaymentMessage('Processing payment...');
-
-    try {
-      const response = await fetch('http://localhost:5000/api/students/payment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          regNo: student.regNo,
-          amount: amount,
-          paymentMethod: 'Online Payment',
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setPaymentMessage(`✓ Payment successful! Transaction ID: ${data.payment.transactionId}`);
-        
-        // Update localStorage with new payment info
-        const studentData = JSON.parse(localStorage.getItem('student') || '{}');
-        studentData.feeStatus = data.payment.feeStatus;
-        studentData.amountPaid = data.payment.amountPaid;
-        studentData.lastPaymentDate = new Date().toISOString();
-        localStorage.setItem('student', JSON.stringify(studentData));
-        
-        // Call parent callback to refresh student data
-        setTimeout(() => {
-          onPaymentSuccess();
-        }, 2000);
-      } else {
-        setPaymentMessage(`✗ Payment failed: ${data.message}`);
-      }
-    } catch (error) {
-      console.error('Payment error:', error);
-      setPaymentMessage('✗ Payment failed. Please try again.');
-    } finally {
-      setIsPaying(false);
-      setPaymentAmount('');
-    }
-  };
+  // Commented out - not currently used but may be needed for future card payment implementation
+  // const handlePayment = async () => {
+  //   const amount = parseFloat(paymentAmount);
+  //   
+  //   if (!amount || amount <= 0) {
+  //     setPaymentMessage('Please enter a valid amount');
+  //     return;
+  //   }
+  //
+  //   const remainingBalance = student.feeDue - student.amountPaid;
+  //   if (amount > remainingBalance) {
+  //     setPaymentMessage(`Amount exceeds balance due (₹${remainingBalance.toLocaleString('en-IN')})`);
+  //     return;
+  //   }
+  //
+  //   setIsPaying(true);
+  //   setPaymentMessage('Processing payment...');
+  //
+  //   try {
+  //     const response = await fetch('http://localhost:5000/api/students/payment', {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({
+  //         regNo: student.regNo,
+  //         amount: amount,
+  //         paymentMethod: 'Online Payment',
+  //       }),
+  //     });
+  //
+  //     const data = await response.json();
+  //
+  //     if (data.success) {
+  //       setPaymentMessage(`✓ Payment successful! Transaction ID: ${data.payment.transactionId}`);
+  //       
+  //       // Update localStorage with new payment info
+  //       const studentData = JSON.parse(localStorage.getItem('student') || '{}');
+  //       studentData.feeStatus = data.payment.feeStatus;
+  //       studentData.amountPaid = data.payment.amountPaid;
+  //       studentData.lastPaymentDate = new Date().toISOString();
+  //       localStorage.setItem('student', JSON.stringify(studentData));
+  //       
+  //       // Call parent callback to refresh student data
+  //       setTimeout(() => {
+  //         onPaymentSuccess();
+  //       }, 2000);
+  //     } else {
+  //       setPaymentMessage(`✗ Payment failed: ${data.message}`);
+  //     }
+  //   } catch (error) {
+  //     console.error('Payment error:', error);
+  //     setPaymentMessage('✗ Payment failed. Please try again.');
+  //   } finally {
+  //     setIsPaying(false);
+  //     setPaymentAmount('');
+  //   }
+  // };
 
   const handleUpiPayment = () => {
     const amount = parseFloat(paymentAmount);
