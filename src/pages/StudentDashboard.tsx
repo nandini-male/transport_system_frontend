@@ -879,7 +879,7 @@ const LiveTracking: React.FC<{ student: any }> = ({ student }) => {
             console.log('🛑 Stopping location polling');
             clearInterval(interval);
         };
-    }, [fetchDriverLocation]);
+    }, [fetchDriverLocation, student.currentRoute, student.route]);
     
     return (
         <Box sx={{ my: 4 }}>

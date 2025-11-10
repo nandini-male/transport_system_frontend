@@ -14,8 +14,6 @@ import {
   ListItem,
   ListItemText,
   ListItemAvatar,
-  Card,
-  CardContent,
   Switch,
   FormControlLabel,
   Alert,
@@ -42,10 +40,8 @@ import {
   CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon,
   Warning as WarningIcon,
-  Settings as SettingsIcon,
   Logout as LogoutIcon,
   Map as MapIcon,
-  TimerOutlined as TimerIcon,
   AccessTime as AccessTimeIcon,
   Route as RouteIcon,
 } from '@mui/icons-material';
@@ -63,14 +59,14 @@ const formatDateTime = (iso?: string) => {
   }
 };
 
-// Mock driver data - will be replaced with real data from backend
-const mockStudents = [
-  { id: 1, name: 'Rajesh Kumar', regNo: '21B01A0101', pickupPoint: 'Tenali Bus Stand', status: 'Boarded', phoneNumber: '+91 98765 43210' },
-  { id: 2, name: 'Priya Sharma', regNo: '21B01A0202', pickupPoint: 'MG Road Junction', status: 'Waiting', phoneNumber: '+91 98765 43211' },
-  { id: 3, name: 'Anil Reddy', regNo: '21B01A0303', pickupPoint: 'Kothapet', status: 'Absent', phoneNumber: '+91 98765 43212' },
-  { id: 4, name: 'Sneha Patel', regNo: '21B01A0404', pickupPoint: 'Tenali Bus Stand', status: 'Boarded', phoneNumber: '+91 98765 43213' },
-  { id: 5, name: 'Kiran Varma', regNo: '21B01A0505', pickupPoint: 'MG Road Junction', status: 'Boarded', phoneNumber: '+91 98765 43214' },
-];
+// Mock driver data - commented out (replaced with real data from backend)
+// const mockStudents = [
+//   { id: 1, name: 'Rajesh Kumar', regNo: '21B01A0101', pickupPoint: 'Tenali Bus Stand', status: 'Boarded', phoneNumber: '+91 98765 43210' },
+//   { id: 2, name: 'Priya Sharma', regNo: '21B01A0202', pickupPoint: 'MG Road Junction', status: 'Waiting', phoneNumber: '+91 98765 43211' },
+//   { id: 3, name: 'Anil Reddy', regNo: '21B01A0303', pickupPoint: 'Kothapet', status: 'Absent', phoneNumber: '+91 98765 43212' },
+//   { id: 4, name: 'Sneha Patel', regNo: '21B01A0404', pickupPoint: 'Tenali Bus Stand', status: 'Boarded', phoneNumber: '+91 98765 43213' },
+//   { id: 5, name: 'Kiran Varma', regNo: '21B01A0505', pickupPoint: 'MG Road Junction', status: 'Boarded', phoneNumber: '+91 98765 43214' },
+// ];
 
 // Dashboard Overview Component
 const DashboardOverview: React.FC<{ 
@@ -1409,8 +1405,9 @@ const DriverDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [driver, setDriver] = useState<any>(null);
   const [students, setStudents] = useState<any[]>([]);
-  const [studentsByPickupPoint, setStudentsByPickupPoint] = useState<any[]>([]);
-  const [studentsWithoutPickup, setStudentsWithoutPickup] = useState<any[]>([]);
+  // Commented out - not currently used but may be needed for future features
+  // const [studentsByPickupPoint, setStudentsByPickupPoint] = useState<any[]>([]);
+  // const [studentsWithoutPickup, setStudentsWithoutPickup] = useState<any[]>([]);
   const [tripStatus, setTripStatus] = useState({
     status: 'Not Started',
     presentCount: 0,
@@ -1480,7 +1477,7 @@ const DriverDashboard = () => {
   };
 
   // Fetch students by route from backend
-  const fetchStudents = async (route: string) => {
+  const fetchStudents = React.useCallback(async (route: string) => {
     try {
       console.log('📋 Fetching students for route:', route);
       
@@ -1495,8 +1492,7 @@ const DriverDashboard = () => {
         console.log('📍 Grouped by pickup points:', data.studentsByPickupPoint.length);
         console.log('⚠️ Without pickup:', data.studentsWithoutPickup.length);
         
-        setStudentsByPickupPoint(data.studentsByPickupPoint);
-        setStudentsWithoutPickup(data.studentsWithoutPickup);
+        // Removed: setStudentsByPickupPoint and setStudentsWithoutPickup (not currently used)
         
         // Get today's attendance
         const todayAttendance = getTodayAttendance();
@@ -1558,7 +1554,7 @@ const DriverDashboard = () => {
       console.error('❌ Error fetching students:', error);
       setStudents([]);
     }
-  };
+  }, []);
 
   useEffect(() => {
     // Clean up old attendance records
@@ -1607,26 +1603,10 @@ const DriverDashboard = () => {
       
       setLoading(false);
     }
-  }, []);
-
-  // Fetch notifications when driver data is loaded
-  useEffect(() => {
-    if (driver && driver.assignedRoute) {
-      fetchNotifications();
-    }
-  }, [driver]);
-
-  // Refresh notifications when switching to notifications tab
-  useEffect(() => {
-    if (activeTab === 'notifications' && driver && driver.assignedRoute) {
-      fetchNotifications();
-      // Mark all notifications as read when viewing the notifications tab
-      setUnreadCount(0);
-    }
-  }, [activeTab]);
+  }, [fetchStudents]);
 
   // Fetch notifications from backend
-  const fetchNotifications = async () => {
+  const fetchNotifications = React.useCallback(async () => {
     try {
       console.log('=== Fetching notifications for driver ===');
       
@@ -1718,7 +1698,23 @@ const DriverDashboard = () => {
       console.error('❌ Error fetching notifications:', error);
       setNotifications([]);
     }
-  };
+  }, [driver]);
+
+  // Fetch notifications when driver data is loaded
+  useEffect(() => {
+    if (driver && driver.assignedRoute) {
+      fetchNotifications();
+    }
+  }, [driver, fetchNotifications]);
+
+  // Refresh notifications when switching to notifications tab
+  useEffect(() => {
+    if (activeTab === 'notifications' && driver && driver.assignedRoute) {
+      fetchNotifications();
+      // Mark all notifications as read when viewing the notifications tab
+      setUnreadCount(0);
+    }
+  }, [activeTab, driver, fetchNotifications]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
     setActiveTab(newValue);
